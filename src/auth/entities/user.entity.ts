@@ -10,6 +10,9 @@ export class UserEntity {
   dolibarrUserId: string;
 
   @Column({ nullable: true })
+  pin: string
+
+  @Column({ nullable: true })
   refresh_token: string;
   @Column({ nullable: true }) module: string;
   @Column() entity: string;

@@ -12,6 +12,7 @@ import { JwtAuthGuard } from './jwt/jwt-auth/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UserEntity } from './entities/user.entity';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { PinDto } from './dtos/pin.dto';
 
 @ApiTags('Authentication') // 📌 Добавляем Swagger-тег для группировки эндпоинтов
 @Controller('auth')
@@ -51,4 +52,15 @@ export class AuthController {
   getCurrentUser(@CurrentUser() user: UserEntity) {
     return user;
   }
+
+  @Post('pin')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Проверка 6-значного PIN-кода' })
+  @ApiResponse({ status: 200, description: 'PIN-код верный' })
+  @ApiResponse({ status: 400, description: 'PIN-код неверный' })
+  checkPinCode(@Body() pinDto: PinDto, @CurrentUser() user: UserEntity) {
+    return this.authService.checkPin(user, pinDto.pin);
+  }
+
 }

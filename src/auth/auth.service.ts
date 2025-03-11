@@ -1,4 +1,11 @@
-import { Inject, Injectable, UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  UnauthorizedException,
+  HttpException,
+  HttpStatus,
+  BadRequestException
+} from '@nestjs/common';
 import { AuthDto, DolibarrLoginResponse } from './dtos/auth.dto';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -36,6 +43,7 @@ export class AuthService {
       dolibarrKey: dolibarrTokenData.success.token,
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
+      isExitPin: !!user.pin
     };
   }
 
@@ -222,5 +230,51 @@ export class AuthService {
     const parsedDate = new Date(value);
     return isNaN(parsedDate.getTime()) ? null : parsedDate;
   }
+
+  async checkPin(user: UserEntity, pin: string) {
+    if (!user) {
+      throw new BadRequestException('❌ Пользователь не найден');
+    }
+
+    if (!user.pin) {
+      // Если PIN отсутствует, хешируем и устанавливаем его
+      await this.setPin(user.id, pin);
+      return { message: '✅ PIN-код установлен и подтверждён' };
+    }
+
+    // ✅ Сравниваем введённый PIN с хешированным значением в БД
+    const isMatch = await bcrypt.compare(pin, user.pin);
+    if (isMatch) {
+      return { message: '✅ PIN-код верный' };
+    } else {
+      throw new BadRequestException('❌ Неверный PIN-код');
+    }
+  }
+
+
+
+  async setPin(userId: string, pin: string) {
+    if (!/^\d{6}$/.test(pin)) {
+      throw new BadRequestException('❌ PIN-код должен содержать ровно 6 цифр');
+    }
+
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new BadRequestException('❌ Пользователь не найден');
+    }
+
+    if (user.pin) {
+      throw new BadRequestException('❌ PIN-код уже установлен');
+    }
+
+    const hashedPin = await bcrypt.hash(pin, 10); // ✅ Хешируем PIN перед сохранением
+    user.pin = hashedPin;
+
+    await this.userRepository.save(user);
+
+    return { message: '✅ PIN-код успешно установлен' };
+  }
+
 
 }
