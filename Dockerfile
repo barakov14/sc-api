@@ -1,5 +1,5 @@
 # Используем официальный Node.js образ
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Устанавливаем рабочую директорию
 WORKDIR /app
@@ -14,7 +14,7 @@ RUN npm install
 COPY . .
 
 # Собираем приложение (если используется TypeScript)
-RUN npm run build
+RUN nest build
 
 # Открываем порт
 EXPOSE 3000
