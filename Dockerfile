@@ -14,7 +14,7 @@ RUN npm install
 COPY . .
 
 # Собираем приложение (если используется TypeScript)
-RUN nest build
+RUN npm run build
 
 # Открываем порт
 EXPOSE 3000
