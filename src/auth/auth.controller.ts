@@ -4,6 +4,7 @@ import {
   Get,
   Post,
   Put,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { AuthDto } from './dtos/auth.dto';
@@ -11,7 +12,13 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt/jwt-auth/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UserEntity } from './entities/user.entity';
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { PinDto } from './dtos/pin.dto';
 
 @ApiTags('Authentication') // 📌 Добавляем Swagger-тег для группировки эндпоинтов
@@ -29,9 +36,7 @@ export class AuthController {
   }
 
   @Put('refresh-token')
-  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Обновление access/refresh токена' })
-  @ApiBearerAuth() // 📌 Указываем, что требуется Bearer-токен
   @ApiBody({
     schema: {
       example: { refreshToken: 'your-refresh-token' },
@@ -39,18 +44,27 @@ export class AuthController {
   })
   @ApiResponse({ status: 200, description: 'Новый access и refresh токен' })
   @ApiResponse({ status: 401, description: 'Недействительный refresh token' })
-  async refreshToken(@Body() body: { refreshToken: string }, @CurrentUser() user: UserEntity) {
-    return this.authService.refreshTokens(user.id, body.refreshToken);
+  async refreshToken(@Body() body: { refreshToken: string }) {
+    return this.authService.refreshTokens(body.refreshToken);
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Получение текущего пользователя' })
   @ApiBearerAuth() // 📌 Защищенный эндпоинт (JWT)
-  @ApiResponse({ status: 200, description: 'Текущий пользователь', type: UserEntity })
+  @ApiResponse({
+    status: 200,
+    description: 'Текущий пользователь',
+    type: UserEntity,
+  })
   @ApiResponse({ status: 401, description: 'Неавторизован' })
-  getCurrentUser(@CurrentUser() user: UserEntity) {
-    return user;
+  async getCurrentUser(@CurrentUser() user: UserEntity, @Req() req: Request) {
+    console.log(user)
+    const data = await this.authService.getUserFromDolibarr(user, req);
+    return {
+      ...data,
+      ...user,
+    };
   }
 
   @Post('pin')
@@ -62,5 +76,4 @@ export class AuthController {
   checkPinCode(@Body() pinDto: PinDto, @CurrentUser() user: UserEntity) {
     return this.authService.checkPin(user, pinDto.pin);
   }
-
 }

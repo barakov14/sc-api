@@ -11,6 +11,5 @@ export class AuthDto {
 export type DolibarrLoginResponse = {
   success: {
     token: string;
-  }
-}
-
+  };
+};

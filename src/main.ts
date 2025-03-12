@@ -10,13 +10,20 @@ async function bootstrap() {
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
 
+  app.enableCors({
+    origin: '*', // Разрешаем доступ с любых источников
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Разрешённые HTTP-методы
+    allowedHeaders: '*', // Разрешённые заголовки
+  });
 
-  const document = SwaggerModule.createDocument(app, new DocumentBuilder()
-    .setTitle('СИЗ.Контрол API')
-    .setDescription('Документация REST API')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build()
+  const document = SwaggerModule.createDocument(
+    app,
+    new DocumentBuilder()
+      .setTitle('СИЗ.Контрол API')
+      .setDescription('Документация REST API')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build(),
   );
 
   SwaggerModule.setup('api/docs', app, document);

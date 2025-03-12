@@ -1,15 +1,21 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { Reflector } from '@nestjs/core';
-import { UserEntity } from '../../entities/user.entity';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { JwtService, TokenExpiredError } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { DolibarrService } from '../../../common/services/dolibarr.service';
+import { UserEntity } from '../../entities/user.entity';
+import { DolibarrUserResponse } from '../../dtos/dolibarrUserResponse.dto';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly reflector: Reflector,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
   ) {}
@@ -40,7 +46,7 @@ export class JwtAuthGuard implements CanActivate {
       request.user = user; // Устанавливаем пользователя в запрос
       return true;
     } catch (error) {
-      throw new UnauthorizedException('Невалидный или просроченный токен');
+      throw new ForbiddenException('Невалидный или просроченный токен');
     }
   }
 }
